@@ -2,7 +2,7 @@
 <!-- =====================================================================
      DOCUMENTO CONTROLADO (ISO 9001 · 7.5) — KNG-DISP-REG
      Sistema: Disponibilidade de motoristas — link único da regional (?base=XXX)
-     Versão: 2.3.3 · Data: 2026-09-25 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
+     Versão: 2.3.4 · Data: 2026-09-25 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
      Controlador (LGPD): Ebazar.com.br Ltda. (Mercado Livre) — operação Kangu
      Histórico de revisões: ver Dossiê de Conformidade, seção "Controle de mudanças".
      ===================================================================== -->
@@ -1136,7 +1136,7 @@ const CFG = {
   BASE: '', BASE_ROTULO: '',
   WORKER_URL: 'https://worker-kangu.erick-marques.workers.dev',
   FORM_RESPONSE_URL: '',
-  ENTRY_MOTORISTA: '', ENTRY_DATA: '', ENTRY_ESPERA: '', ENTRY_CANCELAR: '', ENTRY_SOLICITAR: '',
+  ENTRY_MOTORISTA: '', ENTRY_MODAL: '', ENTRY_DATA: '', ENTRY_ESPERA: '', ENTRY_CANCELAR: '', ENTRY_SOLICITAR: '',
   VALOR_ESPERA_FORM: 'Sim, fico de espera',
   VALOR_CANCELAR: '❌ Cancelar minha disponibilidade nesse dia',
   VALOR_SOLICITAR: '📩 Solicitar exclusão (vira No Show se aprovada)',
@@ -1181,6 +1181,8 @@ function aplicarConfigDaBase(baseId, resp){
     .filter((k, i, a) => k && a.indexOf(k) === i && cc[k] && cc[k].usar !== false && fc[k]).slice(0, 12).map(k => {
     const o = cc[k] || {};
     const item = { label: k, hora: o.hora || '', full: k + (o.hora ? ' (' + o.hora + ')' : ''), entry: 'entry.' + String(fc[k]).replace(/^entry\./, '') };
+    // form no modelo da SMG15: a opção da caixa "HORÁRIO" é "AM (8:00)" (vem pronta do script da base)
+    item.valor = (f.cicloValores && f.cicloValores[k]) || k;
     if(o.semDomingo) item.semDomingo = true;
     if(o.prazoEspecial && o.prazoEspecial.mesmoDia) item.prazoEspecial = { mesmoDia: true, hora: +o.prazoEspecial.hora };
     // horário por ciclo (Torre → "prazo"/"espera" do ciclo): vale quando a base ligou o por-ciclo
@@ -1190,13 +1192,13 @@ function aplicarConfigDaBase(baseId, resp){
     return item;
   });
   const e = v => v ? 'entry.' + String(v).replace(/^entry\./, '') : '';
-  CFG.ENTRY_MOTORISTA = e(ent.mot); CFG.ENTRY_DATA = e(ent.dia);
+  CFG.ENTRY_MOTORISTA = e(ent.mot); CFG.ENTRY_DATA = e(ent.dia); CFG.ENTRY_MODAL = e(ent.modal);
   CFG.ENTRY_ESPERA = e(ent.esp); CFG.ENTRY_CANCELAR = e(ent.cancelar); CFG.ENTRY_SOLICITAR = e(ent.solicitar);
   if(f.cancelOpt) CFG.VALOR_CANCELAR = f.cancelOpt;
   if(f.solicitarOpt) CFG.VALOR_SOLICITAR = f.solicitarOpt;
   if(f.esperaOpt) CFG.VALOR_ESPERA_FORM = f.esperaOpt;
   CFG.DIAS_FORM = Array.isArray(f.dias) ? f.dias : [];
-  CFG.MOT_TIPO = f.motTipo === 'placa' ? 'placa' : 'lista';
+  CFG.MOT_TIPO = (f.motTipo === 'placa' || f.motTipo === 'nome') ? f.motTipo : 'lista';
   CFG.DIA_TIPO = f.diaTipo === 'data' ? 'data' : 'lista';
   CFG.FORM_RESPONSE_URL = /^https:\/\/docs\.google\.com\/forms\//.test(f.responseUrl || '') ? f.responseUrl : '';
   if(c.informativo) CFG.INFORMATIVO = c.informativo;
@@ -1232,17 +1234,19 @@ function rotuloDia(iso){
   return achou || (br + ' (' + DIAS_SEMANA[dataDeIso(iso).getDay()] + ')');
 }
 // form v3: manda só a PLACA (o script confere no cadastro ativo e grava o nome) e a data do calendário
-function valorMotorista(){ return CFG.MOT_TIPO === 'placa' ? placaAtual : rotuloMotorista(); }
+// 'nome' = form no modelo da SMG15 (MOTORISTA é texto: vai o nome do cadastro) · 'placa' = form v3 · senão lista antiga
+function valorMotorista(){ return CFG.MOT_TIPO === 'placa' ? placaAtual : (CFG.MOT_TIPO === 'nome' ? String((atual && atual.nome) || '').trim() : rotuloMotorista()); }
+function valorModal(){ return String((atual && (atual.veiculo || atual.modal)) || '').trim().toUpperCase() || 'SEM MODAL'; }
 function camposDia(iso){
   if(CFG.DIA_TIPO !== 'data') return [[CFG.ENTRY_DATA, rotuloDia(iso)]];
   const [ano, mes, dia] = String(iso).split('-');
   return [[CFG.ENTRY_DATA, iso], [CFG.ENTRY_DATA + '_year', ano], [CFG.ENTRY_DATA + '_month', String(+mes)], [CFG.ENTRY_DATA + '_day', String(+dia)]];
 }
-function camposBaseRegional(iso){ return [[CFG.ENTRY_MOTORISTA, valorMotorista()]].concat(camposDia(iso)); }
+function camposBaseRegional(iso){ return [[CFG.ENTRY_MOTORISTA, valorMotorista()]].concat(CFG.ENTRY_MODAL ? [[CFG.ENTRY_MODAL, valorModal()]] : []).concat(camposDia(iso)); }
 const ADAPT = {
   qsBase: () => 'base=' + encodeURIComponent(CFG.BASE) + '&',
-  camposDisp: (iso, ciclos) => camposBaseRegional(iso).concat(ciclos.map(c => [c.entry, c.label])),
-  camposEspera: (iso, ciclos) => camposBaseRegional(iso).concat(ciclos.map(c => [c.entry, c.label])).concat([[CFG.ENTRY_ESPERA, CFG.VALOR_ESPERA_FORM]]),
+  camposDisp: (iso, ciclos) => camposBaseRegional(iso).concat(ciclos.map(c => [c.entry, c.valor || c.label])),
+  camposEspera: (iso, ciclos) => camposBaseRegional(iso).concat(ciclos.map(c => [c.entry, c.valor || c.label])).concat([[CFG.ENTRY_ESPERA, CFG.VALOR_ESPERA_FORM]]),
   camposExcluir: iso => camposBaseRegional(iso).concat(CFG.ENTRY_CANCELAR ? [[CFG.ENTRY_CANCELAR, CFG.VALOR_CANCELAR]] : []),
   camposSolicitar: iso => camposBaseRegional(iso).concat([[CFG.ENTRY_SOLICITAR, CFG.VALOR_SOLICITAR]]),
   // Sem o campo de espera no form, um "espera" viraria voto NORMAL (com prioridade) → não oferecemos.
