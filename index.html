@@ -2,7 +2,7 @@
 <!-- =====================================================================
      DOCUMENTO CONTROLADO (ISO 9001 · 7.5) — KNG-DISP-REG
      Sistema: Disponibilidade de motoristas — link único da regional (?base=XXX)
-     Versão: 2.3.1 · Data: 2026-09-25 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
+     Versão: 2.3.3 · Data: 2026-09-25 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
      Controlador (LGPD): Ebazar.com.br Ltda. (Mercado Livre) — operação Kangu
      Histórico de revisões: ver Dossiê de Conformidade, seção "Controle de mudanças".
      ===================================================================== -->
@@ -750,11 +750,6 @@ body.is-lite *, body.is-lite *::before, body.is-lite *::after{ animation:none !i
           <span class="menu-card__text"><span class="menu-card__title">Como usar (passo a passo)</span><span class="menu-card__desc">Primeira vez aqui? Toque e veja como é fácil</span></span>
           <span class="menu-card__arrow" aria-hidden="true">›</span>
         </button>
-        <button type="button" class="menu-card" data-open-sheet="sheetInfo">
-          <span class="menu-card__icon" aria-hidden="true">📋</span>
-          <span class="menu-card__text"><span class="menu-card__title">Informativo Geral</span><span class="menu-card__desc">Regras, horários, pagamento e EPI — toque para ler</span></span>
-          <span class="menu-card__arrow" aria-hidden="true">›</span>
-        </button>
         <button type="button" class="menu-card" data-open-sheet="sheetDicas">
           <span class="menu-card__icon" aria-hidden="true">💡</span>
           <span class="menu-card__text"><span class="menu-card__title">Dicas do Motorista</span><span class="menu-card__desc">Pneu careca? Manutenção em dia? Aprenda a conferir</span></span>
@@ -863,66 +858,6 @@ body.is-lite *, body.is-lite *::before, body.is-lite *::after{ animation:none !i
 <!-- =====================================================================
      SHEETS (painéis inferiores) — todos: role="dialog" + aria-modal
      ===================================================================== -->
-<!-- ---------- Informativo Geral ---------- -->
-<div class="sheet" id="sheetInfo" role="dialog" aria-modal="true" aria-labelledby="sheetInfoTitulo">
-  <div class="sheet__backdrop" data-close-sheet></div>
-  <div class="sheet__panel">
-    <div class="sheet__header"><h2 class="sheet__title" id="sheetInfoTitulo">📋 Informativo Geral — Kangu</h2><button type="button" class="sheet__close" data-close-sheet>Fechar ✕</button></div>
-    <div class="sheet__content">
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🕒</span><h3 class="info-block__title">Horários de carregamento</h3></div>
-        <ul id="infoHorarios"></ul></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">📅</span><h3 class="info-block__title">Assiduidade e presença</h3></div>
-        <ul id="infoAssiduidade"><li>Comparecer pelo menos <b>4 vezes por semana</b>.</li>
-        <li>Cada veículo deve operar ao menos <b>2 vezes por mês</b> aos sábados e/ou domingos.</li></ul></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🚗</span><h3 class="info-block__title">Rotas e disponibilidade</h3></div>
-        <p>Não há rotas fixas. As rotas são distribuídas conforme a demanda do Mercado Livre no dia. Marcar disponibilidade <b>dentro do prazo</b> garante <b>prioridade</b> na distribuição — não é rota garantida, mas você é atendido antes de quem está na lista de espera.</p></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">💰</span><h3 class="info-block__title">Pagamento</h3></div>
-        <p>Semanal, toda <b id="infoPagDia">quinta-feira</b>. A Nota Fiscal deve ser enviada de segunda à tarde até no máximo <b id="infoPagPrazo">terça às 12h00</b>.</p>
-        <p>Portal Kangu (diárias, bônus e envio de NF) — login com CNPJ sem pontos/traços e senha:<br>
-          <!-- SEGURANÇA: rel="noopener noreferrer" impede que a aba aberta controle esta página (tabnabbing) -->
-          <a href="https://app.kangu.com.br/#!/auth/user" target="_blank" rel="noopener noreferrer">app.kangu.com.br</a></p>
-        <p class="warn">Rotas com endereços não visitados não são pagas — é obrigatório visitar todos os pontos do mapa.</p></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🚚</span><h3 class="info-block__title">Entregas não concluídas</h3></div>
-        <p>Não conseguiu finalizar? Faça a reversão: retorne ao endereço e tente nova entrega se o destinatário estiver no raio. Isso evita falhas no DS e garante o pagamento.</p>
-        <p class="warn">Obrigatório enviar evidências de insucesso no grupo e tentar as reversões enviadas pelo Monitoramento.</p></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🦺</span><h3 class="info-block__title">EPI obrigatório</h3></div>
-        <ul id="infoEpi"><li>👢 Bota de segurança com biqueira e C.A.</li><li>🧤 Luvas de proteção em bom estado.</li><li>🦺 Colete refletivo.</li></ul></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🚫</span><h3 class="info-block__title">Proibido entrar no galpão com</h3></div>
-        <ul id="infoProibido"><li>⚽ Camiseta/blusa de time.</li><li>⛔ Corrente, brinco, relógio ou qualquer adorno.</li><li>📍 Velocidade acima de 5 km/h dentro do galpão.</li></ul></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">⚠️</span><h3 class="info-block__title">Regras de ouro</h3></div>
-        <div id="infoRegras">
-        <p><b>🔧 Veículo em dia:</b> manutenção preventiva em dia; pneus em perfeito estado (carecas rente/abaixo da TWI ou danificados não são aceitos).</p>
-        <p><b>🔒 Cinto de segurança:</b> proibido rodar com o cinto "clipado" — engatado no encaixe sem ninguém sentado no banco, só para calar o alarme. O cinto tem que estar sempre no corpo de quem ocupa o assento. É item de auditoria e pode gerar penalidade.</p>
-        <p><b>📋 Auditorias:</b> blitz diárias — redobre a atenção e siga os procedimentos.</p>
-        <p><b>🔑 No SVC:</b> chave para fora, no para-brisa; calço de roda; chegou no SVC, bipe sua gaiola imediatamente.</p>
-        <p><b>📍 "Vou Pra Lá":</b> uso obrigatório em todas as entregas, durante toda a operação.</p>
-        </div></section>
-
-      <section class="info-block info-block--danger"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🚫</span><h3 class="info-block__title">No Show e reincidência — janela de 45 dias</h3></div>
-        <p>Faltar a um dia confirmado (ou ter exclusão fora do prazo aprovada) conta como <b class="warn">NO SHOW</b>. A punição é progressiva, contando as ocorrências dos <b>últimos 45 dias</b>:</p>
-        <div class="ladder">
-          <div class="ladder__step ladder__step--1"><b>1ª</b><span>5 dias de pausa</span></div>
-          <div class="ladder__step ladder__step--2"><b>2ª</b><span>10 dias de pausa</span></div>
-          <div class="ladder__step ladder__step--3"><b>3ª</b><span>Remoção do grupo (churn)</span></div>
-        </div>
-        <p class="warn">🔧 <b>Problema mecânico também é No Show.</b> Quebrar no dia da rota é consequência da falta de <b>manutenção preventiva</b> — responsabilidade do motorista. Veículo em dia é pré-requisito para confirmar disponibilidade.</p></section>
-
-      <section class="info-block info-block--danger"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">⛔</span><h3 class="info-block__title">Condutas e penalidades</h3></div>
-        <p class="warn">Abandono de carga, cancelamento de última hora ou descumprimento de compromissos confirmados = remoção do grupo, sem operar pela Kangu em nenhuma operação do Mercado Livre.</p></section>
-
-      <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">📞</span><h3 class="info-block__title">Dúvidas</h3></div>
-        <p>Fale com o responsável do grupo. 📦 Contamos com sua pontualidade, comprometimento e colaboração! 💪</p></section>
-    </div>
-  </div>
-</div>
-
 <!-- ---------- Como usar (passo a passo) ---------- -->
 <div class="sheet" id="sheetComoUsar" role="dialog" aria-modal="true" aria-labelledby="sheetComoUsarTitulo">
   <div class="sheet__backdrop" data-close-sheet></div>
@@ -1157,7 +1092,7 @@ body.is-lite *, body.is-lite *::before, body.is-lite *::after{ animation:none !i
       <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">📌</span><h3 class="info-block__title">Validade dos registros</h3></div>
         <ul>
           <li>Marcar disponibilidade dá <b>prioridade</b>, não rota garantida.</li>
-          <li>Os prazos, a lista de espera e as regras de No Show do <b>Informativo Geral</b> fazem parte destes termos.</li>
+          <li>Os prazos e a lista de espera mostrados nesta página fazem parte destes termos.</li>
           <li>Os registros ficam na planilha da base; em caso de divergência, vale o registro do servidor.</li>
         </ul></section>
       <section class="info-block"><div class="info-block__header"><span class="info-block__icon" aria-hidden="true">🛡️</span><h3 class="info-block__title">Segurança</h3></div>
@@ -1240,11 +1175,18 @@ function aplicarConfigDaBase(baseId, resp){
   CFG.JANELA = (bq.ativo && g.abre != null && g.fecha != null) ? { abre: +g.abre, fecha: +g.fecha } : null;
   const cc = c.ciclos || {}, fc = ent.ciclos || {};
   // só entram ciclos que existem na config E têm campo no formulário (sem campo, o envio se perderia)
-  CFG.CICLOS = ['AM','PM','SD'].filter(k => cc[k] && cc[k].usar !== false && fc[k]).map(k => {
+  // v2.3.2: ciclos LIVRES por base (AM, PM, SD, AM2, NOITE…) na ordem que a base configurou na Torre
+  const ordem = (Array.isArray(c.ordemCiclos) && c.ordemCiclos.length) ? c.ordemCiclos : Object.keys(cc);
+  CFG.CICLOS = ordem.map(k => String(k).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12))
+    .filter((k, i, a) => k && a.indexOf(k) === i && cc[k] && cc[k].usar !== false && fc[k]).slice(0, 12).map(k => {
     const o = cc[k] || {};
     const item = { label: k, hora: o.hora || '', full: k + (o.hora ? ' (' + o.hora + ')' : ''), entry: 'entry.' + String(fc[k]).replace(/^entry\./, '') };
     if(o.semDomingo) item.semDomingo = true;
     if(o.prazoEspecial && o.prazoEspecial.mesmoDia) item.prazoEspecial = { mesmoDia: true, hora: +o.prazoEspecial.hora };
+    // horário por ciclo (Torre → "prazo"/"espera" do ciclo): vale quando a base ligou o por-ciclo
+    const pc = (bq.porCiclo && bq.ciclos && bq.ciclos[k]) || null;
+    if(pc && pc.fecha != null && pc.fecha !== '') item.fecha = +pc.fecha;
+    if(pc && pc.espera != null && pc.espera !== '') item.espera = +pc.espera;
     return item;
   });
   const e = v => v ? 'entry.' + String(v).replace(/^entry\./, '') : '';
@@ -1375,17 +1317,31 @@ function normStatus(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g
 /* =====================================================================
    4. REGRAS DE PRAZO
    ===================================================================== */
+// Horários de cada ciclo: a base pode dar prazo/espera próprios por ciclo (config "por ciclo" na Torre).
+const fechaDe = c => (c && c.fecha != null && !isNaN(c.fecha)) ? +c.fecha : CFG.HORA_FECHA;
+const esperaDe = c => (c && c.espera != null && !isNaN(c.espera)) ? +c.espera : CFG.HORA_LIMITE_ESPERA;
+function menorFecha(){ return CFG.CICLOS.filter(c => !(c.prazoEspecial && c.prazoEspecial.mesmoDia)).reduce((m, c) => Math.min(m, fechaDe(c)), CFG.HORA_FECHA); }
+function esperaAberta(iso, c){
+  const agora = new Date(), alvoZ = d0(dataDeIso(iso));
+  if(alvoZ < d0(agora)) return false;
+  const lim = new Date(alvoZ); lim.setHours(esperaDe(c), 0, 0, 0);
+  return agora < lim;
+}
 // Estado do DIA (regra geral): 'NORMAL' | 'ESPERA' | 'FECHADO'
 function estadoDoDia(alvo){
   const agora = new Date(), alvoZ = d0(alvo);
   if(alvoZ < d0(agora)) return 'FECHADO';
-  const limNormal = new Date(alvoZ); limNormal.setDate(limNormal.getDate()-1); limNormal.setHours(CFG.HORA_FECHA,0,0,0);
+  const limNormal = new Date(alvoZ); limNormal.setDate(limNormal.getDate()-1); limNormal.setHours(menorFecha(),0,0,0);
   const limEspera = new Date(alvoZ); limEspera.setHours(CFG.HORA_LIMITE_ESPERA,0,0,0);
   if(agora < limNormal) return 'NORMAL';
   if(agora < limEspera) return 'ESPERA';
   return 'FECHADO';
 }
-function podeEspera(iso){ return estadoDoDia(dataDeIso(iso)) === 'ESPERA'; }
+// Espera aberta no dia: algum ciclo já saiu do prazo com prioridade e a espera DELE ainda não fechou.
+function podeEspera(iso){
+  if(d0(dataDeIso(iso)) < d0(new Date())) return false;
+  return CFG.CICLOS.some(c => !(c.semDomingo && ehDomingo(iso)) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c));
+}
 
 // Prazo POR CICLO: a regra geral (18h da véspera) ou a exceção do ciclo (ex.: SD até 10h30 do próprio dia).
 function cicloEstadoNormal(alvo, ciclo){
@@ -1398,14 +1354,19 @@ function cicloEstadoNormal(alvo, ciclo){
     const lim = new Date(alvoZ); lim.setHours(h, m, 0, 0);
     return agora < lim;
   }
-  const limNormal = new Date(alvoZ); limNormal.setDate(limNormal.getDate()-1); limNormal.setHours(CFG.HORA_FECHA,0,0,0);
+  const limNormal = new Date(alvoZ); limNormal.setDate(limNormal.getDate()-1); limNormal.setHours(fechaDe(ciclo),0,0,0);
   return agora < limNormal;
 }
 function cicloValidoNoDia(iso, ciclo){
   if(ciclo.semDomingo && ehDomingo(iso)) return false;
   return cicloEstadoNormal(dataDeIso(iso), ciclo);
 }
-function cicloPorTexto(txt){ return CFG.CICLOS.find(c => String(txt).trim().indexOf(c.label) === 0); }
+// exato primeiro; senão o MAIS LONGO que casa no começo ("AM2 (08:30)" é AM2, não AM)
+function cicloPorTexto(txt){
+  const t = String(txt).trim();
+  return CFG.CICLOS.find(c => c.label === t) ||
+    CFG.CICLOS.filter(c => t.indexOf(c.label) === 0).sort((a, b) => b.label.length - a.label.length)[0];
+}
 
 // Excluir direto: dia ainda no prazo normal OU todos os ciclos marcados ainda estão no prazo
 // (ex.: marcou só SD hoje às 9h → pode desfazer até 10h30).
@@ -1487,12 +1448,19 @@ document.addEventListener('keydown', e => {
    ===================================================================== */
 function ciclosNormais(){ return CFG.CICLOS.filter(c => !(c.prazoEspecial && c.prazoEspecial.mesmoDia)); }
 function ciclosEspeciais(){ return CFG.CICLOS.filter(c => c.prazoEspecial && c.prazoEspecial.mesmoDia); }
+// agrupa ciclos com o mesmo valor: [{ v: 18, ciclos: ['AM','PM'] }, { v: 14, ciclos: ['NOITE'] }]
+function agruparPor(lista, fn){ const g = []; lista.forEach(c => { const v = fn(c); const x = g.find(y => y.v === v); if(x) x.ciclos.push(c.label); else g.push({ v, ciclos: [c.label] }); }); return g; }
+function textoEspera(){
+  const g = agruparPor(CFG.CICLOS, esperaDe);
+  if(g.length <= 1) return 'fecha às <b>' + (g.length ? g[0].v : CFG.HORA_LIMITE_ESPERA) + 'h do próprio dia</b>';
+  return 'fecha no próprio dia: ' + g.map(x => '<b>' + x.ciclos.join('/') + '</b> às <b>' + x.v + 'h</b>').join(', ');
+}
 function atualizarAvisoPrazo(){
   const partes = [];
   const normais = ciclosNormais(), especiais = ciclosEspeciais();
-  if(normais.length) partes.push('<b>' + normais.map(c => c.label).join('/') + '</b>: marcar até as <b>' + CFG.HORA_FECHA + 'h da véspera</b> garante <b>prioridade</b> na distribuição das rotas (a rota depende da demanda do Meli).');
+  agruparPor(normais, fechaDe).forEach((x, i) => partes.push('<b>' + x.ciclos.join('/') + '</b>: marcar até as <b>' + x.v + 'h da véspera</b> garante <b>prioridade</b>' + (i === 0 ? ' na distribuição das rotas (a rota depende da demanda do Meli)' : '') + '.'));
   especiais.forEach(c => partes.push('<b>' + c.label + '</b>: pode marcar com <b>prioridade</b> até as <b>' + fmtHora(c.prazoEspecial.hora) + ' do próprio dia</b>.'));
-  partes.push('Depois do prazo de cada ciclo, o dia entra em <b>lista de espera</b> — sem prioridade — que fecha às <b>' + CFG.HORA_LIMITE_ESPERA + 'h do próprio dia</b>.');
+  partes.push('Depois do prazo de cada ciclo, o dia entra em <b>lista de espera</b> — sem prioridade — que ' + textoEspera() + '.');
   const jt = ADAPT.textoJanela(); if(jt) partes.push(jt);
   $('avisoPrazo').innerHTML = '<span class="notice__icon" aria-hidden="true">📢</span><div><b>Como funciona o prazo:</b> ' + partes.join(' ') + '</div>';
 }
@@ -1516,8 +1484,9 @@ function htmlSeguro(s){
 }
 function fmtHoras(){
   const li = $('infoHorarios'); if(li) li.innerHTML = CFG.CICLOS.map(c => '<li>' + esc(c.label) + ' — ' + esc(c.hora) + '</li>').join('');
-  const f = $('cuFecha'); if(f) f.textContent = CFG.HORA_FECHA + 'h';
-  const e = $('cuEspera'); if(e) e.textContent = CFG.HORA_LIMITE_ESPERA + 'h';
+  const gf = agruparPor(ciclosNormais(), fechaDe), ge = agruparPor(CFG.CICLOS, esperaDe);
+  const f = $('cuFecha'); if(f) f.textContent = gf.length > 1 ? 'no horário de cada ciclo' : ((gf.length ? gf[0].v : CFG.HORA_FECHA) + 'h');
+  const e = $('cuEspera'); if(e) e.textContent = ge.length > 1 ? 'no horário de cada ciclo' : ((ge.length ? ge[0].v : CFG.HORA_LIMITE_ESPERA) + 'h');
 }
 function renderInformativo(){
   const I = CFG.INFORMATIVO; if(!I) return;
@@ -2003,7 +1972,7 @@ function conferirNaPlanilha(itens){
    ===================================================================== */
 // Ciclos que podem ir para a espera num dia: fora do prazo normal (os que ainda estão no prazo
 // devem ser marcados normalmente, com prioridade) e respeitando domingo sem PM.
-function ciclosDeEspera(iso){ return CFG.CICLOS.filter(c => !(c.semDomingo && ehDomingo(iso)) && !cicloValidoNoDia(iso, c)); }
+function ciclosDeEspera(iso){ return CFG.CICLOS.filter(c => !(c.semDomingo && ehDomingo(iso)) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c)); }
 function atualizarUltimaHora(){
   const box = $('ultimaHora');
   if(statusAtual === 'BLOQUEIO' || !ADAPT.suportaEspera()){ box.innerHTML = ''; mostrar(box, false); return; }
@@ -2014,7 +1983,7 @@ function atualizarUltimaHora(){
   if(!cand.length){ box.innerHTML = ''; mostrar(box, false); return; }
   box.innerHTML = '<h3 class="waitlist__title">⏰ Perdeu o horário? Entre na lista de espera</h3>' +
     '<p class="waitlist__text">Você pode se colocar à disposição, mas <b>sem prioridade</b> (quem marcou no prazo é atendido primeiro). ' +
-    'Fica aguardando: só é chamado se precisarmos de <b>ambulância</b> ou <b>substituir</b> alguém.<br><small class="text-muted">A espera de cada dia fecha às ' + CFG.HORA_LIMITE_ESPERA + 'h.</small></p>' +
+    'Fica aguardando: só é chamado se precisarmos de <b>ambulância</b> ou <b>substituir</b> alguém.<br><small class="text-muted">A espera ' + textoEspera().replace(/<\/?b>/g, '') + '.</small></p>' +
     cand.map(o => {
       const dt = ddmmFromIso(o.iso), dm = dt.slice(0,5), ja = espera[dt];
       if(ja !== undefined){
