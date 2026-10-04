@@ -2,7 +2,7 @@
 <!-- =====================================================================
      DOCUMENTO CONTROLADO (ISO 9001 · 7.5) — KNG-DISP-REG
      Sistema: Disponibilidade de motoristas — link único da regional (?base=XXX)
-     Versão: 2.3.4 · Data: 2026-09-25 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
+     Versão: 2.3.7 · Data: 2026-10-03 · Gerado a partir de src/ (build.py) — não edite o arquivo final à mão.
      Controlador (LGPD): Ebazar.com.br Ltda. (Mercado Livre) — operação Kangu
      Histórico de revisões: ver Dossiê de Conformidade, seção "Controle de mudanças".
      ===================================================================== -->
@@ -1184,6 +1184,7 @@ function aplicarConfigDaBase(baseId, resp){
     // form no modelo da SMG15: a opção da caixa "HORÁRIO" é "AM (8:00)" (vem pronta do script da base)
     item.valor = (f.cicloValores && f.cicloValores[k]) || k;
     if(o.semDomingo) item.semDomingo = true;
+    if(Array.isArray(o.dias) && o.dias.length && o.dias.length < 7) item.dias = o.dias.map(Number).filter(d => d >= 0 && d <= 6);
     if(o.prazoEspecial && o.prazoEspecial.mesmoDia) item.prazoEspecial = { mesmoDia: true, hora: +o.prazoEspecial.hora };
     // horário por ciclo (Torre → "prazo"/"espera" do ciclo): vale quando a base ligou o por-ciclo
     const pc = (bq.porCiclo && bq.ciclos && bq.ciclos[k]) || null;
@@ -1275,6 +1276,8 @@ const PASSOS = ['passoPlaca','passoDisp','passoOk','passoConsulta','passoCarrega
    2. ESTADO DA SESSÃO (só em memória — nada pessoal vai para o localStorage)
    ===================================================================== */
 let atual = null, placaAtual = '', statusAtual = 'OK';
+// pausado com data de retorno: só pode marcar do retorno em diante (ISO yyyy-mm-dd). Vazio = sem restrição.
+let votarDesde = '';
 let enviosAtuais = {};     // dd/MM/yyyy -> ciclos enviados
 let solicitacoes = {};     // dd/MM/yyyy -> 'ANALISE' | 'APROVADA' | 'NEGADA'
 let historicoNS = [];      // [{data, reg, pun}]
@@ -1315,6 +1318,11 @@ function ddmmFromIso(iso){ const p = iso.split('-'); return p[2] + '/' + p[1] + 
 function ehDataBr(s){ return /^\d{2}\/\d{2}\/\d{4}$/.test(String(s)); }
 function ehIso(s){ return /^\d{4}-\d{2}-\d{2}$/.test(String(s)); }
 function ehDomingo(iso){ return dataDeIso(iso).getDay() === 0; }
+// dias da semana em que o ciclo roda (0=dom … 6=sáb). Sem lista = todo dia (ou todo dia menos domingo, no formato antigo).
+function rodaNoDia(iso, c){ const dw = dataDeIso(iso).getDay(); if(Array.isArray(c.dias) && c.dias.length) return c.dias.indexOf(dw) > -1; return !(c.semDomingo && dw === 0); }
+const DIAS_CURTOS = ['dom','seg','ter','qua','qui','sex','sáb'];
+function diasTxt(dias){ const o = [1,2,3,4,5,6,0].filter(d => dias.indexOf(d) > -1); if(o.length === 6 && o.indexOf(0) < 0) return 'seg a sáb'; if(o.length === 5 && o.indexOf(0) < 0 && o.indexOf(6) < 0) return 'seg a sex'; return o.map(d => DIAS_CURTOS[d]).join(', '); }
+function diasDoCiclo(c){ if(Array.isArray(c.dias) && c.dias.length && c.dias.length < 7) return c.dias; if(c.semDomingo) return [1,2,3,4,5,6]; return null; }
 function fmtHora(h){ const hh = Math.floor(h), mm = Math.round((h-hh)*60); return hh + 'h' + (mm ? ('0'+mm).slice(-2) : ''); }
 function normStatus(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase(); }
 
@@ -1344,7 +1352,7 @@ function estadoDoDia(alvo){
 // Espera aberta no dia: algum ciclo já saiu do prazo com prioridade e a espera DELE ainda não fechou.
 function podeEspera(iso){
   if(d0(dataDeIso(iso)) < d0(new Date())) return false;
-  return CFG.CICLOS.some(c => !(c.semDomingo && ehDomingo(iso)) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c));
+  return CFG.CICLOS.some(c => rodaNoDia(iso, c) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c));
 }
 
 // Prazo POR CICLO: a regra geral (18h da véspera) ou a exceção do ciclo (ex.: SD até 10h30 do próprio dia).
@@ -1362,7 +1370,8 @@ function cicloEstadoNormal(alvo, ciclo){
   return agora < limNormal;
 }
 function cicloValidoNoDia(iso, ciclo){
-  if(ciclo.semDomingo && ehDomingo(iso)) return false;
+  if(!rodaNoDia(iso, ciclo)) return false;
+  if(votarDesde && iso < votarDesde) return false;
   return cicloEstadoNormal(dataDeIso(iso), ciclo);
 }
 // exato primeiro; senão o MAIS LONGO que casa no começo ("AM2 (08:30)" é AM2, não AM)
@@ -1465,6 +1474,8 @@ function atualizarAvisoPrazo(){
   agruparPor(normais, fechaDe).forEach((x, i) => partes.push('<b>' + x.ciclos.join('/') + '</b>: marcar até as <b>' + x.v + 'h da véspera</b> garante <b>prioridade</b>' + (i === 0 ? ' na distribuição das rotas (a rota depende da demanda do Meli)' : '') + '.'));
   especiais.forEach(c => partes.push('<b>' + c.label + '</b>: pode marcar com <b>prioridade</b> até as <b>' + fmtHora(c.prazoEspecial.hora) + ' do próprio dia</b>.'));
   partes.push('Depois do prazo de cada ciclo, o dia entra em <b>lista de espera</b> — sem prioridade — que ' + textoEspera() + '.');
+  const restr = CFG.CICLOS.filter(c => diasDoCiclo(c));
+  if(restr.length) partes.push(restr.map(c => '<b>' + c.label + '</b> só roda <b>' + diasTxt(diasDoCiclo(c)) + '</b>').join('; ') + '.');
   const jt = ADAPT.textoJanela(); if(jt) partes.push(jt);
   $('avisoPrazo').innerHTML = '<span class="notice__icon" aria-hidden="true">📢</span><div><b>Como funciona o prazo:</b> ' + partes.join(' ') + '</div>';
 }
@@ -1750,8 +1761,11 @@ function montarEscolha(){
   let cls = classificarStatus(atual.status);
   // Regional: no dia em que a pausa acaba, a planilha libera votar para o retorno.
   const av = atual && atual.aviso;
-  const retornoHoje = cls.tipo === 'BLOQUEIO' && av && typeof av === 'object' && av.pausado && av.podeVotarHoje;
-  if(retornoHoje) cls = { tipo:'OK' };
+  // Regional v3.8: pausado com data de retorno → libera marcar do retorno em diante (mesmo durante a pausa)
+  const desdeBr = (cls.tipo === 'BLOQUEIO' && av && typeof av === 'object' && av.pausado && ehDataBr(String(av.votarAPartirDe || ''))) ? String(av.votarAPartirDe) : '';
+  votarDesde = desdeBr ? isoDe(dataDeBr(desdeBr)) : '';
+  const retornoHoje = !desdeBr && cls.tipo === 'BLOQUEIO' && av && typeof av === 'object' && av.pausado && av.podeVotarHoje;
+  if(retornoHoje || desdeBr) cls = { tipo:'OK' };
   statusAtual = cls.tipo;
   preencherDrv($('drvDisp'));
   const aviso = $('avisoStatus'), bt = $('btEnviar'), area = $('areaEscolha');
@@ -1785,13 +1799,17 @@ function montarEscolha(){
   if(cls.tipo === 'INOPERANTE'){
     aviso.className = 'alert alert--warn'; aviso.textContent = '⚠️ Confirme sua aptidão abaixo para liberar o envio.';
     mostrar($('boxInoperante'), true);
+  }else if(desdeBr){
+    aviso.className = 'alert alert--warn';
+    aviso.innerHTML = '⏸ <b>Você está pausado.</b> Volta em <b>' + esc(desdeBr.slice(0,5)) + '</b> — pode marcar disponibilidade de <b>' + esc(desdeBr.slice(0,5)) + '</b> em diante.' +
+      (av.motivo ? '<div class="alert__details"><div><b>Motivo:</b> ' + esc(av.motivo) + '</div></div>' : '');
   }else if(retornoHoje){
     aviso.className = 'alert alert--warn'; aviso.textContent = '✅ ' + (av.mensagem || 'Sua pausa termina hoje — já pode marcar disponibilidade para o retorno.');
   }else{
     aviso.className = 'alert alert--ok'; aviso.textContent = 'Tudo certo! Marque os dias e os ciclos.';
   }
   // aviso de atrasos (regional) aparece junto, sem bloquear
-  if(!retornoHoje && av && typeof av === 'object' && av.aviso && av.mensagem){
+  if(!retornoHoje && !desdeBr && av && typeof av === 'object' && av.aviso && av.mensagem){
     aviso.className = 'alert alert--warn'; aviso.textContent = String(av.mensagem) + (cls.tipo === 'INOPERANTE' ? ' — Confirme sua aptidão abaixo para liberar o envio.' : '');
   }
   mostrarVagaDoDia();
@@ -1804,7 +1822,7 @@ function montarEscolha(){
     const validos = CFG.CICLOS.filter(c => cicloValidoNoDia(iso, c));
     if(!validos.length) continue;
     const dt = ddmmFromIso(iso), jaTem = enviosAtuais[dt] !== undefined;
-    const soAlguns = validos.length < CFG.CICLOS.filter(c => !(c.semDomingo && ehDomingo(iso))).length;
+    const soAlguns = validos.length < CFG.CICLOS.filter(c => rodaNoDia(iso, c)).length;
     chips.push('<button type="button" class="chip' + (jaTem ? ' chip--sent' : '') + '" data-dia="' + iso + '" aria-pressed="false">' +
       DIAS_SEMANA[d.getDay()] + '<span class="chip__sub">' + dt.slice(0,5) + '</span>' +
       (soAlguns ? '<span class="chip__note">só ' + validos.map(c => c.label).join('/') + '</span>' : '') + '</button>');
@@ -1844,8 +1862,8 @@ function ajustarCiclosPorPrazo(){
     ch.classList.toggle('chip--disabled', invalido);
     if(invalido){
       ch.setAttribute('aria-disabled', 'true');
-      const soDomingo = c.semDomingo && dias.every(ehDomingo);
-      ch.dataset.motivoOff = soDomingo ? c.label + ' não roda aos domingos.' : c.label + ' já passou do prazo para os dias marcados.';
+      const naoRoda = dias.every(iso => !rodaNoDia(iso, c));
+      ch.dataset.motivoOff = naoRoda ? c.label + ' não roda ' + (dias.length === 1 ? 'nesse dia' : 'nesses dias') + ' (só ' + diasTxt(diasDoCiclo(c) || [0,1,2,3,4,5,6]) + ').' : c.label + ' já passou do prazo para os dias marcados.';
       if(ch.classList.contains('chip--selected')){ alternarChip(ch, false); toast(ch.dataset.motivoOff + ' Desmarcado.', true); }
     }else{
       ch.removeAttribute('aria-disabled'); delete ch.dataset.motivoOff;
@@ -1976,7 +1994,7 @@ function conferirNaPlanilha(itens){
    ===================================================================== */
 // Ciclos que podem ir para a espera num dia: fora do prazo normal (os que ainda estão no prazo
 // devem ser marcados normalmente, com prioridade) e respeitando domingo sem PM.
-function ciclosDeEspera(iso){ return CFG.CICLOS.filter(c => !(c.semDomingo && ehDomingo(iso)) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c)); }
+function ciclosDeEspera(iso){ if(votarDesde && iso < votarDesde) return []; return CFG.CICLOS.filter(c => rodaNoDia(iso, c) && !cicloValidoNoDia(iso, c) && esperaAberta(iso, c)); }
 function atualizarUltimaHora(){
   const box = $('ultimaHora');
   if(statusAtual === 'BLOQUEIO' || !ADAPT.suportaEspera()){ box.innerHTML = ''; mostrar(box, false); return; }
@@ -2195,13 +2213,25 @@ async function solicitarExclusao(dt){
 /* =====================================================================
    14. NAVEGAÇÃO, SESSÃO E EVENTOS (delegação — sem onclick inline)
    ===================================================================== */
-let _cgTimer = null;
+// v2.3.7: a tela "onde eu carrego" reconsultava o worker a cada 20 s enquanto ficasse aberta (até a sessão cair
+// por inatividade, 10 min = 30 consultas). Agora: a cada 20 s nos 2 primeiros minutos, depois a cada 60 s, e
+// nada com a aba escondida — a conta gratuita do worker tem limite diário de pedidos. "Atualizar" volta ao ritmo rápido.
+let _cgTimer = null, _cgDesde = 0;
+function _cgAgendar(){
+  if(_cgTimer){ clearTimeout(_cgTimer); _cgTimer = null; }
+  if($('passoCarregamento').classList.contains('is-hidden')) return;
+  const espera = (modoLeve() || (Date.now() - _cgDesde) > 120000) ? 60000 : 20000;
+  _cgTimer = setTimeout(() => {
+    _cgTimer = null;
+    if($('passoCarregamento').classList.contains('is-hidden')) return;
+    if(!document.hidden) mostrarCarregamento(true);
+    _cgAgendar();
+  }, espera);
+}
 function trocarPasso(id){
   PASSOS.forEach(p => mostrar($(p), p === id));
-  if(_cgTimer){ clearInterval(_cgTimer); _cgTimer = null; }
-  if(id === 'passoCarregamento'){
-    _cgTimer = setInterval(() => { if(!$('passoCarregamento').classList.contains('is-hidden')) mostrarCarregamento(true); else { clearInterval(_cgTimer); _cgTimer = null; } }, modoLeve() ? 60000 : 20000);
-  }
+  if(_cgTimer){ clearTimeout(_cgTimer); _cgTimer = null; }
+  if(id === 'passoCarregamento'){ _cgDesde = Date.now(); _cgAgendar(); }
   window.scrollTo({ top:0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 
@@ -2210,7 +2240,7 @@ function reiniciar(){
   if(_modalFim) _modalFim(false);
   clearTimeout(_conferirT);
   fecharSheet();
-  atual = null; placaAtual = ''; statusAtual = 'OK';
+  atual = null; placaAtual = ''; statusAtual = 'OK'; votarDesde = '';
   enviosAtuais = {}; solicitacoes = {}; historicoNS = []; espera = {}; excluidosLocais = {};
   ['drvDisp','drvConsulta','drvCarreg','avisoStatus','cardVaga','jaMarcados','chipsDias','chipsCiclos','ultimaHora','resumoOk','listaEnvios','histNS','cgCorpo']
     .forEach(id => { $(id).innerHTML = ''; });
@@ -2240,7 +2270,7 @@ const ACOES = {
   'voltar': () => trocarPasso('passoDisp'),
   'consultar': () => consultar(),
   'abrir-carregamento': () => { if(!atual) return; trocarPasso('passoCarregamento'); mostrarCarregamento(); },
-  'atualizar-carregamento': () => mostrarCarregamento(),
+  'atualizar-carregamento': () => { _cgDesde = Date.now(); mostrarCarregamento(); _cgAgendar(); },
   'excluir': el => { if(ehDataBr(el.dataset.date)) removerDia(el.dataset.date); },
   'solicitar': el => { if(ehDataBr(el.dataset.date)) solicitarExclusao(el.dataset.date); },
   'confirmar-espera': el => { if(ehIso(el.dataset.iso)) marcarEspera(el.dataset.iso); },
